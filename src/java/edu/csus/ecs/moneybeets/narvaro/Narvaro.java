@@ -9,6 +9,8 @@
 
 package edu.csus.ecs.moneybeets.narvaro;
 
+import insidefx.undecorator.Undecorator;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -19,12 +21,15 @@ import org.apache.log4j.Logger;
 
 import edu.csus.ecs.moneybeets.narvaro.util.ConfigurationManager;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
 
 /**
@@ -39,8 +44,9 @@ public class Narvaro extends Application {
     private static Narvaro instance = null;
     
     private Stage stage;
-    private Parent root;
+    private Region root;
     private Scene scene;
+    private Undecorator undecorator;
     
     /**
      * Location of the home directory. All config files should be
@@ -105,12 +111,24 @@ public class Narvaro extends Application {
                 + File.separator + "resources" + File.separator + "Narvaro.fxml");
         root = FXMLLoader.load(fxml.toUri().toURL());
             
-        scene = new Scene(root);
+        undecorator = new Undecorator(stage, root);
+        undecorator.getStylesheets().add("skin/undecorator.css");
+        
+        scene = new Scene(undecorator);
         
         // add CSS here to skin Narvaro
         Path css = Paths.get(ConfigurationManager.NARVARO.getHomeDirectory() 
                 + File.separator + "resources" + File.separator + "Narvaro.css");
         root.getStylesheets().add(css.toUri().toURL().toExternalForm());
+        
+        if (root != null) {
+            Node node = root.lookup("#draggableNode");
+            undecorator.setAsStageDraggable(stage, node);
+        }
+        undecorator.setFadeInTransition();
+        
+        scene.setFill(Color.TRANSPARENT);
+        stage.initStyle(StageStyle.TRANSPARENT);
         
         stage.setScene(scene);
         
@@ -119,6 +137,7 @@ public class Narvaro extends Application {
 
             @Override
             public void handle(final WindowEvent we) {
+            	we.consume();
                 shutdown();
             }
             
@@ -225,8 +244,7 @@ public class Narvaro extends Application {
     private void shutdown() {
         
         LOG.info("Narvaro Shutting down");
-        Platform.exit();
-        System.exit(0);
+        undecorator.setFadeOutTransition();
     }
 
 }
